@@ -1,34 +1,38 @@
 #####################################################
 # include public define file                        #
 #####################################################
-include $(V8_ROOT)/build/main_build/def_app.mak
+
+##全局变量定义
+INCLUDE :=
+LIBS :=
+DEFS :=
+CFLAGS := -g
+SRC_FILES :=
+CC=gcc
+VERSION = UNKNOWN
 
 #####################################################
 # define variable                                   #
 #####################################################
-TARGET  = $(V8_RELEASE_APP_PATH)/tipc_config
-
-
-SRC_FILES = tipc_config.c
-
-
+TARGET  = tipc_config
+SRCS = tipc_config.c
 
 #####################################################
 # include module headfile                           #
 #####################################################
-INCLUDE +=	-I$(V8_ROOT)/open_source/tipc/src/include
-			
-ifndef VERSION
-VERSION = UNKNOWN
-endif
-
-CFLAGS += -Wno-format-nonliteral
 
 CFLAGS += -Wno-format-nonliteral -fPIE -D_FORTIFY_SOURCE=2 -O2
-LDFLAGS += -fstack-protector-all -fPIE -pie
-STRIP_FLAG += --strip-unneeded	       
-DEFS += -DVERSION=\"${VERSION}\"
-#####################################################
-# include commfrv exec file                         #
-#####################################################
-include $(V8_ROOT)/build/main_build/exec_so.mak
+CFLAGS += -I$(ETIPC_INCLUDE_PATH)
+
+CFLAGS += -DVERSION=\"${VERSION}\"
+
+# The default target to build
+all: $(TARGET)
+
+# Rule to build the executable
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS)
+
+# Clean up build files
+clean:
+	rm -f $(TARGET)
