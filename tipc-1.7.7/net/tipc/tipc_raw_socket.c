@@ -84,6 +84,7 @@
 #include <linux/if_vlan.h>
 #include <linux/virtio_net.h>
 #include <linux/net.h>
+#include <linux/filter.h>
 
 #ifdef CONFIG_INET
 #include <net/inet_common.h>
@@ -832,7 +833,7 @@ int tipc_raw_build_skb(struct sk_buff **skb,
     msg_sect = get_msgiov(msg); 
     num_sect = get_msgiovlen(msg);
     
-    /* Ìî³äÊı¾İ */
+    /* å¡«å……æ•°æ® */
 	for (pos = 0, res = 1, cnt = 0; res && (cnt < num_sect); cnt++) 
     {
 		res = !copy_from_user(sk_buff->data + pos, 
@@ -860,7 +861,7 @@ int tipc_raw_send_skb( struct sk_buff *skb)
         return res;
     }
     
-    /* ´Ë´¦Èë¶ÓÁĞºó£¬¾Í²»ĞèÒªÊÍ·Å */
+    /* æ­¤å¤„å…¥é˜Ÿåˆ—åï¼Œå°±ä¸éœ€è¦é‡Šæ”¾ */
     return res;
 }
 
@@ -896,9 +897,9 @@ int tipc_raw_send2name( struct msghdr *msg,
         goto out;
     }
 
-    /* build skb Ö®Ç°±¾º¯Êıtipc_raw_build_skbÔÚtipc_node_lock Ö®ºó ÓÉÓÚMIPSºÍPOWERPCµÄ 
-    copy_from_userÊµÏÖ²»Ò»ÖÂ MIPS»á·ÅÈ¨(¹Ø±ÕÖĞ¶Ï»ñÈ¡ËøÖ®ºó²»ÔÊĞí·ÅÈ¨) 
-    ½«tipc_raw_build_skbÌáÇ° Ô¤·ÀÒ»Ğ©ËÀËøµÈÎÊÌâ */
+    /* build skb ä¹‹å‰æœ¬å‡½æ•°tipc_raw_build_skbåœ¨tipc_node_lock ä¹‹å ç”±äºMIPSå’ŒPOWERPCçš„ 
+    copy_from_userå®ç°ä¸ä¸€è‡´ MIPSä¼šæ”¾æƒ(å…³é—­ä¸­æ–­è·å–é”ä¹‹åä¸å…è®¸æ”¾æƒ) 
+    å°†tipc_raw_build_skbæå‰ é¢„é˜²ä¸€äº›æ­»é”ç­‰é—®é¢˜ */
     res = tipc_raw_build_skb(&skb, msg, len);
     if (0 != res)
     {
@@ -1364,14 +1365,14 @@ static int tipc_raw_bind(struct socket *sock, struct sockaddr *uaddr, int addr_l
         pt = &po->prot_hook_ext[cnt];
 
         /*
-        Óë»áÈË£º
-        PTN:   ËÎºê´ï¡¢Îº¼ÒµÀ
-        Â·ÓÉÆ÷£ºÑ¦Î¬¡¢ÕÅ½¡
-        dopra£º Íô·É
-        ±³¾°£º ¿ìËÙ¸ĞÖªµÄsocketÊ¹ÓÃ²»±ê×¼£¬ÔÚtipcµ×²ãÈ¥×ª»»ÁËbindµÄĞ­ÒéÀàĞÍ£¬Êµ¼ÊÉÏ¸ù¾İĞ­ÒéÒªÇó£¬ĞèÒªÔÚÉÏ²ã×ª»»¡£
-        ½áÂÛ£ºptnµÄ´úÂëÒÑ¾­±»²¨·Ö¡¢ptnµÈ¶à¸ö²úÆ·Ïß¸´ÓÃ£¬Èç¹û¸Ä¶¯£¬ÑéÖ¤¹¤×÷Á¿¾Ş´ó£¬¶øÇÒÈİÒ×³öÎÊÌâ¡£ËùÒÔÕë¶Ô¿ìËÙ¸ĞÖª
-        µÄsocket£¬ÔÚtipcµ×²ã×ö×Ö½ÚĞò×ª»»£¬Ìí¼Ó×¢ÊÍ£¬·ÀÖ¹ºóÀ´ÈËÔÙ¼ÌĞøÓÃ´í¡£ ºóĞø´´½¨socket£¬ĞèÒª°´ÕÕ±ê×¼Ğ­Òé
-        À´¸ã¡£*/
+        ä¸ä¼šäººï¼š
+        PTN:   å®‹å®è¾¾ã€é­å®¶é“
+        è·¯ç”±å™¨ï¼šè–›ç»´ã€å¼ å¥
+        dopraï¼š æ±ªé£
+        èƒŒæ™¯ï¼š å¿«é€Ÿæ„ŸçŸ¥çš„socketä½¿ç”¨ä¸æ ‡å‡†ï¼Œåœ¨tipcåº•å±‚å»è½¬æ¢äº†bindçš„åè®®ç±»å‹ï¼Œå®é™…ä¸Šæ ¹æ®åè®®è¦æ±‚ï¼Œéœ€è¦åœ¨ä¸Šå±‚è½¬æ¢ã€‚
+        ç»“è®ºï¼šptnçš„ä»£ç å·²ç»è¢«æ³¢åˆ†ã€ptnç­‰å¤šä¸ªäº§å“çº¿å¤ç”¨ï¼Œå¦‚æœæ”¹åŠ¨ï¼ŒéªŒè¯å·¥ä½œé‡å·¨å¤§ï¼Œè€Œä¸”å®¹æ˜“å‡ºé—®é¢˜ã€‚æ‰€ä»¥é’ˆå¯¹å¿«é€Ÿæ„ŸçŸ¥
+        çš„socketï¼Œåœ¨tipcåº•å±‚åšå­—èŠ‚åºè½¬æ¢ï¼Œæ·»åŠ æ³¨é‡Šï¼Œé˜²æ­¢åæ¥äººå†ç»§ç»­ç”¨é”™ã€‚ åç»­åˆ›å»ºsocketï¼Œéœ€è¦æŒ‰ç…§æ ‡å‡†åè®®
+        æ¥æã€‚*/
         pt->type = htons(po->num);
         pt->dev  = dev;
         pt->func = packet_rcv;
@@ -1420,17 +1421,17 @@ int tipc_raw_create(struct net *net, struct socket *sock, int protocol)
 
     info("tipc_raw_create enter..\n");
 
-    /* È¨ÏŞÑéÖ¤? */
+    /* æƒé™éªŒè¯? */
     if (!capable(CAP_NET_RAW))
         return -EPERM;
 
-    /* Ğ­Òé´ØÑéÖ¤ */
+    /* åè®®ç°‡éªŒè¯ */
     if (sock->type != SOCK_RAW)
         return -ESOCKTNOSUPPORT;
 
     sock->state = SS_UNCONNECTED;
     
-    /* ·ÖÅäsk */    
+    /* åˆ†é…sk */    
     res = -ENOBUFS;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 1)
     sk = sk_alloc(net, PF_PACKET, GFP_KERNEL, &packet_proto, kern);
@@ -1441,10 +1442,10 @@ int tipc_raw_create(struct net *net, struct socket *sock, int protocol)
     if (sk == NULL)
         goto out;
 
-    /* Éè¶¨sockµÄops£¬¼´¶ÔÓ¦ÓÃ»§Ì¬µÄbind¡¢connectÖîÈç´ËÀà²Ù×÷µÄ¶¯×÷ */
+    /* è®¾å®šsockçš„opsï¼Œå³å¯¹åº”ç”¨æˆ·æ€çš„bindã€connectè¯¸å¦‚æ­¤ç±»æ“ä½œçš„åŠ¨ä½œ */
     sock->ops = &raw_packet_ops;
 
-    /* ³õÊ¼»¯sock½á¹¹(¼´sk)¸÷³ÉÔ±£¬²¢Éè¶¨ÓëÌ×½Ó×Ösocket(¼´sock)µÄ¹ØÁª */
+    /* åˆå§‹åŒ–sockç»“æ„(å³sk)å„æˆå‘˜ï¼Œå¹¶è®¾å®šä¸å¥—æ¥å­—socket(å³sock)çš„å…³è” */
     sock_init_data(sock, sk);
 
     po = pkt_sk(sk);
@@ -1452,7 +1453,7 @@ int tipc_raw_create(struct net *net, struct socket *sock, int protocol)
     /*coverity[missing_lock]*/
     po->num = proto;
 
-    /* Éè¶¨skµÄdestuctº¯Êı */
+    /* è®¾å®šskçš„destuctå‡½æ•° */
     sk->sk_destruct = packet_sock_destruct;
     sk_refcnt_debug_inc(sk);
 
@@ -1537,7 +1538,11 @@ static int tipc_raw_recvmsg(TIPC_KIOCB struct socket *sock,
      *    but then it will block.
      */
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 0, 0)
+    skb = skb_recv_datagram(sk, flags, &err);
+#else
     skb = skb_recv_datagram(sk, flags, flags & MSG_DONTWAIT, &err);
+#endif
 
     /*
      *    An error occurred so return it. Because skb_recv_datagram()
@@ -1620,7 +1625,9 @@ static int tipc_raw_recvmsg(TIPC_KIOCB struct socket *sock,
     if (err)
         goto out_free;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)	
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 0, 0)
+    sock_recv_cmsgs(msg, sk, skb);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
     sock_recv_ts_and_drops(msg, sk, skb);
 #else
     sock_recv_timestamp(msg, sk, skb);
@@ -2697,8 +2704,10 @@ static const struct proto_ops raw_packet_ops_spkt = {
 #endif
     .sendmsg    = packet_sendmsg_spkt,
     .recvmsg    = tipc_raw_recvmsg,
-    .mmap       = sock_no_mmap,
-    .sendpage   = sock_no_sendpage,
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 11, 0)
+	.sendpage	= sock_no_sendpage,
+#endif
+	.mmap		= sock_no_mmap
 };
 
 static const struct proto_ops raw_packet_ops = {
@@ -2718,8 +2727,10 @@ static const struct proto_ops raw_packet_ops = {
     .getsockopt = packet_getsockopt,
     .sendmsg    = tipc_raw_sendmsg,
     .recvmsg    = tipc_raw_recvmsg,
-    .mmap       = packet_mmap,
-    .sendpage   = sock_no_sendpage,
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 11, 0)
+	.sendpage	= sock_no_sendpage,
+#endif
+	.mmap		= packet_mmap
 };
 
 static const struct net_proto_family packet_family_ops = {

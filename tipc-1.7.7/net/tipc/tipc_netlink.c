@@ -46,7 +46,11 @@ static int handle_cmd(struct sk_buff *skb, struct genl_info *info)
 	struct sk_buff *rep_buf;
 	struct nlmsghdr *rep_nlh;
 	struct nlmsghdr *req_nlh = info->nlhdr;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+	struct tipc_genlmsghdr *req_userhdr = genl_info_userhdr(info);
+#else
 	struct tipc_genlmsghdr *req_userhdr = info->userhdr;
+#endif
 	int hdr_space = NLMSG_SPACE(GENL_HDRLEN + TIPC_GENL_HDRLEN);
 	u16 cmd;
 

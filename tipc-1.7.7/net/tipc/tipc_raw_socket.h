@@ -6,6 +6,12 @@
 #ifndef _TIPC_RAW_SOCKET_H__
 #define _TIPC_RAW_SOCKET_H__
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 0, 0)
+#define sk_refcnt_debug_dec(sk) do { } while (0)
+#define sk_refcnt_debug_release(sk) do { } while (0)
+#define sk_refcnt_debug_inc(sk) do { } while (0)
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 int tipc_raw_create(struct net *net, struct socket *sock, int protocol, int kern);
 #else
@@ -26,7 +32,11 @@ extern struct net_device * tipc_media_get_dev(struct bearer *pbearer);
 #define TIPC_KIOCB
 #define IOCB_LK             1
 
-#define get_msgiov(m)       (m)->msg_iter.iov
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+#define get_msgiov(m) iter_iov(&((m)->msg_iter))
+#else
+#define get_msgiov(m) (m)->msg_iter.iov
+#endif
 #define get_msgiovlen(m)    (m)->msg_iter.nr_segs
 
 #define tipc_sk_data_ready(sk)                  \

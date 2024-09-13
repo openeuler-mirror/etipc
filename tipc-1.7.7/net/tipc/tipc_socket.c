@@ -86,7 +86,7 @@ extern unsigned int g_tipc_dbg_switch;
 		warn("Overload 0x%x, total queue %u, Sock port %u queue %u, last read at %u\n",\
 		over_load_count, (u32)atomic_read(&tipc_queue_size),\
 		(tp)->ref, (quelen), (tp)->last_read_tim);\
-    if (waitqueue_active( SK_SLEEP(sk))) /*ÈçÔÚwait,Ôö¼Ó³¢ÊÔ»½ĞÑÏÂ */ \
+    if (waitqueue_active( SK_SLEEP(sk))) /*å¦‚åœ¨wait,å¢åŠ å°è¯•å”¤é†’ä¸‹ */ \
         wake_up_interruptible( SK_SLEEP(sk)); \
 	return TIPC_ERR_OVERLOAD;\
 } while (0)
@@ -94,12 +94,12 @@ extern unsigned int g_tipc_dbg_switch;
 /* rdm flow-control */
 /* should be: OVERLOAD_LIMIT_BASE > PAUSE_LIMIT > TIPC_FLOW_CONTROL_WIN*4 */
 #define PAUSE_QUE_LIMIT       (TIPC_FLOW_CONTROL_WIN * 10)
-#define PAUSE_SK_QUE_LIMIT    (TIPC_FLOW_CONTROL_WIN * 2)  /* µ¥¸ö10% ¿ªÊ¼·´Ñ¹*/
+#define PAUSE_SK_QUE_LIMIT    (TIPC_FLOW_CONTROL_WIN * 2)  /* å•ä¸ª10% å¼€å§‹åå‹*/
 
 #define SIZE_WEIGHT(sz)  ((sz) < 0x800 ? 0 : (sz) / 0x800)
 
 
-/* ±¨ÎÄ´ÓÌØ±ğ¶à½µÏÂÀ´µÄÊ±ºò¼ì²é */
+/* æŠ¥æ–‡ä»ç‰¹åˆ«å¤šé™ä¸‹æ¥çš„æ—¶å€™æ£€æŸ¥ */
 #define NEED_UNPAUSE(q_sz)   \
 	((q_sz) == PAUSE_SK_QUE_LIMIT/2 && \
 	 atomic_read(&tipc_queue_size) < PAUSE_QUE_LIMIT/2)
@@ -321,7 +321,7 @@ static int tipc_create(struct socket *sock, int protocol)
 	sock->state = state;
 
 	sock_init_data(sock, sk);
-    sk->sk_rcvbuf =	max(0x1000000, sk->sk_rcvbuf); /* ±ÜÃâÈ±Ê¡ÖµÌ«Ğ¡ */
+    sk->sk_rcvbuf =	max(0x1000000, sk->sk_rcvbuf); /* é¿å…ç¼ºçœå€¼å¤ªå° */
 	sk->sk_backlog_rcv = backlog_rcv;
 	tipc_sk(sk)->p = tp_ptr;
 	tipc_sk(sk)->conn_timeout = msecs_to_jiffies(CONN_TIMEOUT_DEFAULT);
@@ -686,7 +686,7 @@ static int __send_msg(struct socket *sock,
 					     get_msgiov(m));
 		}
 		if (likely(res != -ELINKCONG)) {
-			if (unlikely(res < 0)) /* Ê§°Ü²»°üÀ¨-ELINKCONG */
+			if (unlikely(res < 0)) /* å¤±è´¥ä¸åŒ…æ‹¬-ELINKCONG */
 				tport->sent_failed++;
 			if (needs_conn && (res >= 0)) {
 				sock->state = SS_CONNECTING;
@@ -866,7 +866,12 @@ static int send_stream(TIPC_KIOCB struct socket *sock,
 
 	curr_iov = get_msgiov(m);
 	curr_iovlen = get_msgiovlen(m);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 0, 0)
+	// my_msg type is ITER_IOVEC=0, so the iter_iov is iter->__iov
+	my_msg.msg_iter.__iov = &my_iov;
+#else
 	get_msgiov(&my_msg) = &my_iov;
+#endif
 	get_msgiovlen(&my_msg) = 1;
 	my_msg.msg_flags = m->msg_flags;
 	my_msg.msg_name = NULL;
@@ -1126,7 +1131,7 @@ restart:
 			sz = buf_len;
 			m->msg_flags |= MSG_TRUNC;
 		}
-		/* support iov recv, m->msg_iov»á±»¸Ä±ä */
+		/* support iov recv, m->msg_iovä¼šè¢«æ”¹å˜ */
 		if (unlikely(tipc_memcpy_to_msg(m, msg_data(msg),
 					  sz))) {
 			res = -EFAULT;
@@ -1149,8 +1154,8 @@ restart:
 			tipc_acknowledge(tport->ref, tport->conn_unacked);
 
         /* rdm-flow control, send unpause */
-        /* Èç¹ûÓĞÓµÈû£¬¾¡Á¿Í¨¹ı³¬Ê±½â³ı¡£
-         ÕâÀï²»ÔÙ´¦Àí£¬·ñÔòËøµÄÊ¹ÓÃ²»Ò»ÖÂ£¬ĞŞ¸ÄÌ«¸´ÔÓ
+        /* å¦‚æœæœ‰æ‹¥å¡ï¼Œå°½é‡é€šè¿‡è¶…æ—¶è§£é™¤ã€‚
+         è¿™é‡Œä¸å†å¤„ç†ï¼Œå¦åˆ™é”çš„ä½¿ç”¨ä¸ä¸€è‡´ï¼Œä¿®æ”¹å¤ªå¤æ‚
 		if (unlikely(NEED_UNPAUSE(skb_queue_len(&sk->sk_receive_queue)))) {
 			struct port_msg_stat *ps;
 			u32 oport = msg_origport(msg);
@@ -1502,7 +1507,7 @@ static int backlog_rcv(struct sock *sk, struct sk_buff *buf)
 	u32 res;
 	struct tipc_port *tport = tipc_sk_port(sk);
 
-	/* tport->sk_bk_sz--; ÕâÀïÃ»ÓĞspin_lock(sk_lock.slock)£¬ÔÚdispatchÖÃ0 */
+	/* tport->sk_bk_sz--; è¿™é‡Œæ²¡æœ‰spin_lock(sk_lock.slock)ï¼Œåœ¨dispatchç½®0 */
 	res = filter_rcv(sk, buf);
 	if (res) {
 		if (res != TIPC_ERR_NO_PORT)
@@ -1569,14 +1574,14 @@ static u32 dispatch(struct tipc_port *tport, struct sk_buff *buf)
 		 SIZE_WEIGHT(msg_size(msg)) * sk_que_len > PAUSE_SK_QUE_LIMIT*3)) {
 
 		/*
-		 * ÒòÎª±¨ÎÄÓĞÑÓ³Ù,ËùÒÔÃ¿Èô¸É¸ö·¢Ò»´Îpause£¬sock±¨ÎÄÉÙÊ±²»·¢ËÍpause
-		 * µ±½Ó½üÁÙ½çÖµÊ±,¼Ó¿ì·¢ËÍpause£¬ÇÒpauseÊ±¼äÓ¦Ôö´ó
+		 * å› ä¸ºæŠ¥æ–‡æœ‰å»¶è¿Ÿ,æ‰€ä»¥æ¯è‹¥å¹²ä¸ªå‘ä¸€æ¬¡pauseï¼ŒsockæŠ¥æ–‡å°‘æ—¶ä¸å‘é€pause
+		 * å½“æ¥è¿‘ä¸´ç•Œå€¼æ—¶,åŠ å¿«å‘é€pauseï¼Œä¸”pauseæ—¶é—´åº”å¢å¤§
 		 */
 		if (sk_que_len % (TIPC_MIN_LINK_WIN) == 0 && 
             sk_que_len > PAUSE_SK_QUE_LIMIT/4) {
     		send_pause = TIPC_PAUSE_MS_DEF * (sk_que_len/TIPC_FLOW_CONTROL_WIN*2 + 1);
 		} else {
-			/* ·ÀÖ¹»º´æ´ó±¨ÎÄÕ¼ÓÃ´óÁ¿ÄÚ´æ */
+			/* é˜²æ­¢ç¼“å­˜å¤§æŠ¥æ–‡å ç”¨å¤§é‡å†…å­˜ */
 		    if (sk_que_len > PAUSE_SK_QUE_LIMIT * 3/2 || 
 				(sk_que_len % (TIPC_MIN_LINK_WIN/4) == 1 &&
 				 SIZE_WEIGHT(msg_size(msg)) * sk_que_len > PAUSE_SK_QUE_LIMIT*3))
@@ -1587,7 +1592,7 @@ static u32 dispatch(struct tipc_port *tport, struct sk_buff *buf)
 	
 	if (!sock_owned_by_user(sk)) {
 		res = filter_rcv(sk, buf);
-		tport->sk_bk_sz = 0; /* see release_sock()£¬´ËÊ±backlog±ØÎª¿Õ */
+		tport->sk_bk_sz = 0; /* see release_sock()ï¼Œæ­¤æ—¶backlogå¿…ä¸ºç©º */
 	} else {
 		if (SK_ADD_BACKLOG(sk, buf))
 			res = TIPC_ERR_OVERLOAD;
@@ -1624,7 +1629,7 @@ static u32 dispatch(struct tipc_port *tport, struct sk_buff *buf)
 			tipc_pause(tport, snode, sport, mc, ps->pause_msec);
 		}
 	} else {
-		/* µ¥ÏòÍ¨ĞÅµÄÒ²Òª·´Ñ¹£¬²»ÄÜ½Ó³ı·´Ñ¹£¬ËùÒÔ¼õ°ë´¦Àí */
+		/* å•å‘é€šä¿¡çš„ä¹Ÿè¦åå‹ï¼Œä¸èƒ½æ¥é™¤åå‹ï¼Œæ‰€ä»¥å‡åŠå¤„ç† */
 		if (unlikely(send_pause)) {
 			tipc_pause(tport, snode, sport, mc, send_pause/2);
 		}		
@@ -2142,8 +2147,10 @@ static const struct proto_ops msg_ops = {
 	.getsockopt	= getsockopt,
 	.sendmsg	= send_msg,
 	.recvmsg	= recv_msg,
-	.mmap		= sock_no_mmap,
-	.sendpage	= sock_no_sendpage
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 11, 0)
+	.sendpage	= sock_no_sendpage,
+#endif
+	.mmap		= sock_no_mmap
 };
 
 static const struct proto_ops packet_ops = {
@@ -2163,8 +2170,10 @@ static const struct proto_ops packet_ops = {
 	.getsockopt	= getsockopt,
 	.sendmsg	= send_packet,
 	.recvmsg	= recv_msg,
-	.mmap		= sock_no_mmap,
-	.sendpage	= sock_no_sendpage
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 11, 0)
+	.sendpage	= sock_no_sendpage,
+#endif
+	.mmap		= sock_no_mmap
 };
 
 static const struct proto_ops stream_ops = {
@@ -2184,8 +2193,10 @@ static const struct proto_ops stream_ops = {
 	.getsockopt	= getsockopt,
 	.sendmsg	= send_stream,
 	.recvmsg	= recv_stream,
-	.mmap		= sock_no_mmap,
-	.sendpage	= sock_no_sendpage
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 11, 0)
+	.sendpage	= sock_no_sendpage,
+#endif
+	.mmap		= sock_no_mmap
 };
 
 static struct net_proto_family tipc_family_ops = {

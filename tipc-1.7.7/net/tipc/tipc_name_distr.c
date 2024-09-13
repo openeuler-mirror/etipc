@@ -324,8 +324,8 @@ void tipc_named_request(unsigned long node)
 void tipc_named_node_up(unsigned long node)
 {
 	struct sk_buff *buf;
-	struct sk_buff *temp_buf;
 	struct list_head delivery_list;
+	struct list_head *iter, *temp;
 
 	INIT_LIST_HEAD(&delivery_list);
 
@@ -374,9 +374,10 @@ void tipc_named_node_up(unsigned long node)
 
 	read_unlock_bh(&tipc_nametbl_lock); 
 
-	list_for_each_safe(buf, temp_buf, ((struct sk_buff *)&delivery_list)) {
+	list_for_each_safe(iter, temp, (&delivery_list)) {
 		int ret = 0;
-		list_del((struct list_head *)buf);
+		buf = (struct sk_buff*)iter;
+		list_del(iter);
 		if (addr_cluster(tipc_own_addr) == node) {
 			msg_set_nametype_dummy(buf_msg(buf), 0);
 			ret = tipc_bclink_send_msg(buf);
@@ -397,8 +398,8 @@ void tipc_named_node_up_uni(unsigned long node)
 {
 #ifdef CONFIG_TIPC_UNICLUSTER_FRIENDLY
 	struct sk_buff *buf;
-	struct sk_buff *temp_buf;
 	struct list_head delivery_list;
+	struct list_head *iter, *temp;
 
 	INIT_LIST_HEAD(&delivery_list);
 
@@ -413,8 +414,9 @@ void tipc_named_node_up_uni(unsigned long node)
 
 	read_unlock_bh(&tipc_nametbl_lock); 
 
-	list_for_each_safe(buf, temp_buf, ((struct sk_buff *)&delivery_list)) {
-		list_del((struct list_head *)buf);
+	list_for_each_safe(iter, temp, (&delivery_list)) {
+		buf = (struct sk_buff*)iter;
+		list_del(iter);
 		if (tipc_link_send(buf, node, node) < 0) {
 			warn("Bulk publication not sent\n");
 		}
@@ -650,7 +652,7 @@ void tipc_named_recv(struct sk_buff *buf)
 	
 	/* Recv DIST_REQUEST name. todo: REQUEST route. */
 	if (type == DIST_REQUEST) {
-		/* 可能会多发一次 */
+		// may send one more time
 		tipc_k_signal((Handler)tipc_named_node_up,
 				      msg_orignode(msg));
 	}
@@ -930,8 +932,8 @@ static void route_distribute(struct list_head *delivery_list, u32 dest_node,
 void tipc_route_node_up(unsigned long node)
 {
 	struct sk_buff *buf;
-	struct sk_buff *temp_buf;
 	struct list_head delivery_list;
+	struct list_head *iter, *temp;
 
 	INIT_LIST_HEAD(&delivery_list);
 
@@ -955,8 +957,9 @@ void tipc_route_node_up(unsigned long node)
 
 	read_unlock_bh(&tipc_routetbl_lock);
 
-	list_for_each_safe(buf, temp_buf, ((struct sk_buff *)&delivery_list)) {
-		list_del((struct list_head *)buf);
+	list_for_each_safe(iter, temp, (&delivery_list)) {
+		buf = (struct sk_buff*)iter;
+		list_del(iter);
 		if (tipc_link_send(buf, node, node) < 0) {
 			warn("Bulk route update not sent\n");
 		}
