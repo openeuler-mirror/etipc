@@ -2260,7 +2260,7 @@ int tipc_port_recv_sections(struct port *sender, unsigned int num_sect,
         #ifdef CONFIG_TIPC_PORT_STATISTICS
         tipc_port_msg_stats(buf, sender, TIPC_PORT_SNDMSG);
         #endif
-        tipc_port_recv_msg(buf);
+        res = tipc_port_recv_msg(buf);
     }
     return res;
 }
