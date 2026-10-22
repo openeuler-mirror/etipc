@@ -361,7 +361,7 @@ static inline u32 mod(u32 x)
 	return x & 0xffffu;
 }
 
-static inline int between(u32 lower, u32 upper, u32 n)
+static inline int tipc_between(u32 lower, u32 upper, u32 n)
 {
 	if ((lower < n) && (n < upper))
 		return 1;
